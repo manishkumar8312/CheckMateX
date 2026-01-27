@@ -99,7 +99,7 @@ checkmatex/
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/realtime-chess-game.git
+git clone https://github.com/your-username/checkmatex.git
 cd realtime-chess-game
 ```
 
