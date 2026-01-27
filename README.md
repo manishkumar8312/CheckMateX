@@ -1,4 +1,4 @@
-# Realtime Chess Game
+# CheckMateX
 
 A real-time multiplayer chess application built using React, Node.js, and Socket.IO. The platform supports private room creation using a PIN, real-time move synchronization, configurable timers, and multiple board themes.
 
