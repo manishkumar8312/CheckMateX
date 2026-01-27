@@ -2,6 +2,13 @@
 
 A real-time multiplayer chess application built using React, Node.js, and Socket.IO. The platform supports private room creation using a PIN, real-time move synchronization, configurable timers, and multiple board themes.
 
+[![Status](https://img.shields.io/badge/Status-Active-brightgreen)]()
+[![Maintained](https://img.shields.io/badge/Maintained-Yes-success)]()
+[![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)]()
+[![Backend](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)]()
+[![Styling](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)]()
+[![License](https://img.shields.io/badge/License-MIT-success)]()
+
 ---
 
 ## Features
