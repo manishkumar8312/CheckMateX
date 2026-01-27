@@ -1,0 +1,35 @@
+.board-light {
+  background-color: #f0d9b5;
+}
+
+.board-dark {
+  background-color: #b58863;
+}
+
+.highlight {
+  background-color: #f6f669 !important;
+}
+
+.check {
+  background-color: #ff6b6b !important;
+}
+
+.checkmate {
+  background-color: #ff0000 !important;
+}
+
+.wood-theme .board-light {
+  background-color: #deb887;
+}
+
+.wood-theme .board-dark {
+  background-color: #8b4513;
+}
+
+.dark-theme .board-light {
+  background-color: #312e2b;
+}
+
+.dark-theme .board-dark {
+  background-color: #769656;
+}
