@@ -20,6 +20,7 @@ class SocketService {
       reconnectionAttempts: 5,
       maxReconnectionAttempts: 5,
       timeout: 20000,
+      transports: ['websocket', 'polling']
     });
 
     this.socket.on('connect', () => {

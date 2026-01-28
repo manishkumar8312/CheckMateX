@@ -1,25 +1,18 @@
-import { Server } from 'socket.io';
-import { createServer } from 'http';
-import cors from 'cors';
-import { config } from './socket.js';
+import { Server } from "socket.io";
+import { createServer } from "http";
+import cors from "cors";
+import { config } from "./socket.js";
 
 const createSocketServer = (app) => {
   const server = createServer(app);
-  
-  // Configure CORS
-  app.use(cors({
-    origin: config.cors.origin,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }));
 
-  // Create Socket.io server
+  /* Express CORS */
+  app.use(cors(config.cors));
+
+  /* Socket.IO server */
   const io = new Server(server, {
-    cors: {
-      origin: config.cors.origin,
-      methods: ['GET', 'POST'],
-      credentials: true
-    }
+    cors: config.cors,
+    transports: ["websocket", "polling"] // Support both transports
   });
 
   return { server, io };

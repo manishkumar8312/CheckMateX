@@ -1,21 +1,28 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config();
 
 const corsOrigin = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
-  : ['http://localhost:5173'];
+  ? process.env.CORS_ORIGIN.split(",").map(o => o.trim())
+  : [
+      "https://checkmatex.vercel.app",
+      "http://localhost:5173"
+    ];
 
 export const config = {
   port: process.env.PORT || 3001,
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv: process.env.NODE_ENV || "development",
+
   cors: {
-    origin: corsOrigin.length === 1 ? corsOrigin[0] : corsOrigin
+    origin: corsOrigin,
+    methods: ["GET", "POST"],
+    credentials: true
   },
+
   game: {
     maxRooms: 1000,
     maxPlayersPerRoom: 2,
-    roomCleanupInterval: 300000, // 5 minutes
-    inactiveRoomTimeout: 1800000 // 30 minutes
+    roomCleanupInterval: 300000,
+    inactiveRoomTimeout: 1800000
   }
 };
