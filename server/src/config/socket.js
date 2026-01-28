@@ -2,11 +2,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173'];
+
 export const config = {
   port: process.env.PORT || 3001,
   nodeEnv: process.env.NODE_ENV || 'development',
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173'
+    origin: corsOrigin.length === 1 ? corsOrigin[0] : corsOrigin
   },
   game: {
     maxRooms: 1000,
