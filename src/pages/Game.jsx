@@ -273,12 +273,18 @@ const Game = () => {
   };
 
   const makeMove = (fromRow, fromCol, toRow, toCol) => {
+    console.log('Making move:', { fromRow, fromCol, toRow, toCol, playerId, roomId });
     if (socket && playerId) {
       socket.emit('makeMove', {
         roomId,
         playerId,
         from: { row: fromRow, col: fromCol },
         to: { row: toRow, col: toCol }
+      }, (response) => {
+        console.log('Move response:', response);
+        if (!response?.success) {
+          alert(response?.message || 'Invalid move');
+        }
       });
     }
   };

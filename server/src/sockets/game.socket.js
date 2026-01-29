@@ -27,8 +27,10 @@ export const registerGameSocket = (io, socket) => {
   });
 
   socket.on('makeMove', (payload, callback) => {
+    console.log('makeMove received:', payload);
     try {
       const result = makeMove(payload);
+      console.log('makeMove successful:', result);
       
       // Switch timer to the next player
       const nextPlayer = result.currentPlayer;
@@ -37,6 +39,7 @@ export const registerGameSocket = (io, socket) => {
       io.to(payload.roomId).emit('moveMade', result);
       callback?.({ success: true, ...result });
     } catch (error) {
+      console.log('makeMove error:', error.message);
       callback?.({ success: false, message: error.message });
     }
   });
