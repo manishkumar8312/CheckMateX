@@ -1,4 +1,5 @@
 import { makeMove, resignGame, getGameState } from '../controllers/gameController.js';
+import { timerService } from '../services/index.js';
 
 export const registerGameSocket = (io, socket) => {
   socket.on('joinGame', ({ roomId }, callback) => {
@@ -28,6 +29,11 @@ export const registerGameSocket = (io, socket) => {
   socket.on('makeMove', (payload, callback) => {
     try {
       const result = makeMove(payload);
+      
+      // Switch timer to the next player
+      const nextPlayer = result.currentPlayer;
+      timerService.switchTimer(payload.roomId, nextPlayer);
+      
       io.to(payload.roomId).emit('moveMade', result);
       callback?.({ success: true, ...result });
     } catch (error) {

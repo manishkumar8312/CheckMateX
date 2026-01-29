@@ -1,4 +1,5 @@
 import { createRoom, joinRoom, leaveRoom, startGame, getRoom } from '../controllers/roomController.js';
+import { timerService } from '../services/index.js';
 
 export const registerRoomSocket = (io, socket) => {
   const emitRoomState = (roomId) => {
@@ -44,6 +45,10 @@ export const registerRoomSocket = (io, socket) => {
 
       if (room.players.length === 2 && room.status !== 'playing') {
         const { room: startedRoom } = startGame({ roomId: room.id });
+        
+        // Start the white player's timer when game begins
+        timerService.startTimer(room.id, 'white');
+        
         io.to(room.id).emit('gameStarted', { room: startedRoom });
         emitRoomState(room.id);
       }

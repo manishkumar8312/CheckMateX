@@ -319,7 +319,7 @@ const RoomLobby = () => {
                   </div>
                 </div>
                 
-                <Timer initialTime={roomData?.timeControl * 60 || 600} />
+                <Timer roomId={roomId} initialTime={roomData?.timeControl * 60 || 600} />
               </div>
             </div>
           </div>

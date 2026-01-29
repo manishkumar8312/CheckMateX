@@ -405,9 +405,9 @@ const Game = () => {
               </div>
 
               <Timer 
+                roomId={roomId}
+                currentPlayer={currentPlayer}
                 initialTime={timeControl} 
-                isActive={gameState === 'playing' && !gameResult}
-                onTimeExpire={() => console.log('Time expired')}
               />
 
               <ThemeSelector 

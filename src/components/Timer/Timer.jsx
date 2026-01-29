@@ -1,29 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { useSocket } from '../../socket/socket';
 
-const Timer = ({ initialTime = 600, isActive = true, onTimeExpire }) => {
-  const [time, setTime] = useState(initialTime);
-  const [isRunning, setIsRunning] = useState(isActive);
+const Timer = ({ roomId, initialTime = 600, currentPlayer = 'white' }) => {
+  const socket = useSocket();
+  const [whiteTime, setWhiteTime] = useState(initialTime);
+  const [blackTime, setBlackTime] = useState(initialTime);
+  const [isWhiteTimerRunning, setIsWhiteTimerRunning] = useState(false);
+  const [isBlackTimerRunning, setIsBlackTimerRunning] = useState(false);
 
   useEffect(() => {
-    let interval = null;
-    if (isRunning && time > 0) {
-      interval = setInterval(() => {
-        setTime((time) => {
-          if (time <= 1) {
-            setIsRunning(false);
-            if (onTimeExpire) {
-              onTimeExpire();
-            }
-            return 0;
-          }
-          return time - 1;
-        });
-      }, 1000);
-    } else if (time === 0) {
-      setIsRunning(false);
-    }
-    return () => clearInterval(interval);
-  }, [isRunning, time, onTimeExpire]);
+    if (!socket || !roomId) return;
+
+    // Subscribe to timer updates
+    socket.emit('subscribeTimer', { roomId });
+
+    // Listen for timer updates from backend
+    const handleTimerUpdate = (data) => {
+      if (data.roomId === roomId) {
+        setWhiteTime(data.whiteTime);
+        setBlackTime(data.blackTime);
+        setIsWhiteTimerRunning(data.isWhiteTimerRunning);
+        setIsBlackTimerRunning(data.isBlackTimerRunning);
+      }
+    };
+
+    socket.on('timerUpdate', handleTimerUpdate);
+
+    return () => {
+      socket.off('timerUpdate', handleTimerUpdate);
+      socket.emit('unsubscribeTimer', { roomId });
+    };
+  }, [socket, roomId]);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -31,39 +38,37 @@ const Timer = ({ initialTime = 600, isActive = true, onTimeExpire }) => {
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const toggleTimer = () => {
-    setIsRunning(!isRunning);
-  };
-
-  const resetTimer = () => {
-    setTime(initialTime);
-    setIsRunning(false);
-  };
-
-  const getTimeColor = () => {
+  const getTimeColor = (time, isRunning) => {
     if (time <= 10) return 'text-red-600 animate-pulse';
     if (time <= 30) return 'text-orange-500';
+    if (isRunning) return 'text-green-600';
     return 'text-gray-800';
   };
 
   return (
-    <div className="flex flex-col items-center space-y-2 p-4 bg-gray-100 rounded-lg shadow-md">
-      <div className={`text-4xl font-mono font-bold ${getTimeColor()}`}>
-        {formatTime(time)}
+    <div className="flex flex-col items-center space-y-4 p-4 bg-gray-100 rounded-lg shadow-md">
+      <div className="flex space-x-8">
+        {/* White Timer */}
+        <div className={`text-center ${currentPlayer === 'white' ? 'ring-2 ring-blue-500 rounded-lg p-2' : ''}`}>
+          <div className="text-sm font-medium text-gray-600 mb-1">White</div>
+          <div className={`text-3xl font-mono font-bold ${getTimeColor(whiteTime, isWhiteTimerRunning)}`}>
+            {formatTime(whiteTime)}
+          </div>
+        </div>
+        
+        {/* Black Timer */}
+        <div className={`text-center ${currentPlayer === 'black' ? 'ring-2 ring-blue-500 rounded-lg p-2' : ''}`}>
+          <div className="text-sm font-medium text-gray-600 mb-1">Black</div>
+          <div className={`text-3xl font-mono font-bold ${getTimeColor(blackTime, isBlackTimerRunning)}`}>
+            {formatTime(blackTime)}
+          </div>
+        </div>
       </div>
-      <div className="flex space-x-2">
-        <button
-          onClick={toggleTimer}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
-          {isRunning ? 'Pause' : 'Start'}
-        </button>
-        <button
-          onClick={resetTimer}
-          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-        >
-          Reset
-        </button>
+      
+      <div className="text-xs text-gray-500 text-center">
+        {isWhiteTimerRunning && "White's turn"}
+        {isBlackTimerRunning && "Black's turn"}
+        {!isWhiteTimerRunning && !isBlackTimerRunning && "Timer paused"}
       </div>
     </div>
   );
