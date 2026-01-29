@@ -30,14 +30,19 @@ class RoomService {
   }
 
   joinRoom(roomId, player) {
+    console.log('Joining room:', roomId, 'with player:', player);
     const room = this.rooms.get(roomId);
     if (!room) {
       throw new Error('Room not found');
     }
 
+    console.log('Room found:', room);
+    console.log('Current players:', room.players);
+
     if (player?.id) {
       const existingIndex = room.players.findIndex((p) => p.id === player.id);
       if (existingIndex !== -1) {
+        console.log('Player reconnecting:', player.id);
         const existingPlayer = room.players[existingIndex];
         const updatedPlayer = {
           ...existingPlayer,
@@ -50,6 +55,7 @@ class RoomService {
     }
 
     if (room.players.length >= 2) {
+      console.log('Room is full. Players:', room.players);
       throw new Error('Room is full');
     }
 
