@@ -59,6 +59,13 @@ class RoomService {
       throw new Error('Room is full');
     }
 
+    // Check for duplicate player names
+    const existingPlayerWithName = room.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+    if (existingPlayerWithName) {
+      console.log('Duplicate player name:', player.name, 'Existing player:', existingPlayerWithName);
+      throw new Error('A player with this name is already in the room');
+    }
+
     const newPlayer = { ...player };
     room.players.push(newPlayer);
     room.lastActivity = new Date();
