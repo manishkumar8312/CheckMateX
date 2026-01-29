@@ -27,8 +27,10 @@ export const registerRoomSocket = (io, socket) => {
   });
 
   socket.on('joinRoom', (payload, callback) => {
+    console.log('joinRoom event received:', payload);
     try {
       const { room, player } = joinRoom(payload);
+      console.log('joinRoom successful:', { room, player });
       socket.join(room.id);
       socket.data.roomId = room.id;
       socket.data.playerId = player.id;
@@ -48,6 +50,7 @@ export const registerRoomSocket = (io, socket) => {
 
       callback?.({ success: true, room, player });
     } catch (error) {
+      console.log('joinRoom error:', error.message);
       callback?.({ success: false, message: error.message });
     }
   });
