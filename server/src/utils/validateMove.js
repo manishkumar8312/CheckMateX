@@ -21,8 +21,25 @@ export const validateMove = (from, to, board, currentPlayer) => {
 
   // Simulate the move to check if it would leave king in check
   const tempBoard = simulateMove(board, from, to);
+  
+  // Check if the current player's king is in check BEFORE the move
+  const currentlyInCheck = isKingInCheck(currentPlayer, board);
+  
+  // If currently in check, only allow moves that get the king out of check
+  if (currentlyInCheck) {
+    const wouldStillBeInCheck = isKingInCheck(currentPlayer, tempBoard);
+    if (!wouldStillBeInCheck) {
+      // Good move - gets king out of check
+      return { valid: true };
+    } else {
+      // Still in check - invalid move
+      return { valid: false, reason: 'Must move out of check' };
+    }
+  }
+  
+  // If not currently in check, don't allow moves that put king in check
   if (isKingInCheck(currentPlayer, tempBoard)) {
-    return { valid: false, reason: 'Move would leave king in check' };
+    return { valid: false, reason: 'Move would put king in check' };
   }
 
   return { valid: true };

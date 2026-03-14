@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Chess } from 'chess.js';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../socket/socket';
 import ChessBoard from '../components/ChessBoard/ChessBoard';
@@ -26,6 +27,20 @@ const Game = () => {
   const [timeControl, setTimeControl] = useState(600);
   const [playerId, setPlayerId] = useState(() => getSessionValue('playerId'));
   const [playerName, setPlayerName] = useState(() => getSessionValue('playerName'));
+  const [chessFen, setChessFen] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  
+  const chess = useMemo(() => new Chess(chessFen), [chessFen]);
+
+  const fromCoords = (row, col) => {
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    return `${files[col]}${8 - row}`;
+  };
+
+  const toCoords = (square) => {
+    const col = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const row = 8 - parseInt(square[1]);
+    return { row, col };
+  };
 
   useEffect(() => {
     setPlayerId(getSessionValue('playerId'));
@@ -38,8 +53,9 @@ const Game = () => {
     socket.emit('joinGame', { roomId });
 
     socket.on('gameState', (state) => {
-      setGameState(state.status);
+      setGameState(state.isInCheck ? 'check' : state.status);
       setBoard(state.board);
+      if (state.chessFen) setChessFen(state.chessFen);
       setPlayers(state.players);
       setCurrentPlayer(state.currentPlayer);
       setGameResult(state.result);
@@ -52,10 +68,30 @@ const Game = () => {
     });
 
     socket.on('moveMade', (moveData) => {
-      setBoard(moveData.board);
-      setCurrentPlayer(moveData.currentPlayer);
+      console.log('=== MOVE MADE EVENT ===');
+      console.log('Move data:', moveData);
+      
+      setBoard(moveData.room?.board || moveData.board);
+      if (moveData.room?.chessFen) setChessFen(moveData.room.chessFen);
+      setCurrentPlayer(moveData.room?.currentPlayer || moveData.currentPlayer);
       setSelectedSquare(null);
       setPossibleMoves([]);
+      
+      // Only treat as game over for terminal states — never for "check"
+      const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw', 'timeout', 'resigned'];
+      if (moveData.gameState && GAME_OVER_STATUSES.includes(moveData.gameState.status)) {
+        console.log('Game over detected:', moveData.gameState);
+        setGameResult(moveData.gameState);
+        setGameState('ended');
+      }
+    });
+
+    socket.on('checkStatus', (checkData) => {
+      if (checkData.isInCheck) {
+        setGameState('check');
+      } else {
+        setGameState('playing');
+      }
     });
 
     socket.on('gameEnded', (result) => {
@@ -72,28 +108,47 @@ const Game = () => {
     return () => {
       socket.off('gameState');
       socket.off('moveMade');
+      socket.off('checkStatus');
       socket.off('gameEnded');
       socket.off('error');
     };
   }, [socket, roomId, navigate]);
 
   const handleSquareClick = (row, col) => {
-    if (gameState !== 'playing' || gameResult) return;
+    const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw', 'timeout', 'resigned'];
+    const isGameOver = gameResult && GAME_OVER_STATUSES.includes(gameResult.status);
+    
+    if (isGameOver) return;
 
     if (selectedSquare) {
-      const isValidMove = possibleMoves.some(move => move.row === row && move.col === col);
-      
-      if (isValidMove) {
-        makeMove(selectedSquare.row, selectedSquare.col, row, col);
-      } else if (board[row][col] && isPlayerPiece(board[row][col])) {
-        selectSquare(row, col);
-      } else {
+      const clickedPiece = board[row][col];
+      const isSameSquare = selectedSquare.row === row && selectedSquare.col === col;
+
+      if (isSameSquare) {
+        // Deselect if clicking same square again
         setSelectedSquare(null);
         setPossibleMoves([]);
+        return;
       }
+
+      // If clicking another own piece, re-select it instead of trying to move
+      if (clickedPiece && isPlayerPiece(clickedPiece)) {
+        setSelectedSquare({ row, col });
+        setPossibleMoves([]);
+        return;
+      }
+
+      // Otherwise attempt the move (capture or empty square)
+      makeMove(selectedSquare.row, selectedSquare.col, row, col);
+      setSelectedSquare(null);
+      setPossibleMoves([]);
     } else {
       if (board[row][col] && isPlayerPiece(board[row][col])) {
-        selectSquare(row, col);
+        setSelectedSquare({ row, col });
+        // Calculate possible moves using chess.js
+        const square = fromCoords(row, col);
+        const moves = chess.moves({ square, verbose: true });
+        setPossibleMoves(moves.map(m => toCoords(m.to)));
       }
     }
   };
@@ -105,172 +160,7 @@ const Game = () => {
     return (playerColor === 'white' && isWhite) || (playerColor === 'black' && !isWhite);
   };
 
-  const selectSquare = (row, col) => {
-    setSelectedSquare({ row, col });
-    const moves = calculatePossibleMoves(row, col);
-    setPossibleMoves(moves);
-  };
 
-  const calculatePossibleMoves = (row, col) => {
-    const piece = board[row][col];
-    if (!piece) return [];
-
-    const moves = [];
-    const pieceType = piece.toLowerCase();
-    const isWhite = piece === piece.toUpperCase();
-
-    switch (pieceType) {
-      case 'p':
-        moves.push(...getPawnMoves(row, col, isWhite));
-        break;
-      case 'n':
-        moves.push(...getKnightMoves(row, col, isWhite));
-        break;
-      case 'b':
-        moves.push(...getBishopMoves(row, col, isWhite));
-        break;
-      case 'r':
-        moves.push(...getRookMoves(row, col, isWhite));
-        break;
-      case 'q':
-        moves.push(...getQueenMoves(row, col, isWhite));
-        break;
-      case 'k':
-        moves.push(...getKingMoves(row, col, isWhite));
-        break;
-    }
-
-    return moves;
-  };
-
-  const getPawnMoves = (row, col, isWhite) => {
-    const moves = [];
-    const direction = isWhite ? -1 : 1;
-    const startRow = isWhite ? 6 : 1;
-
-    if (isValidSquare(row + direction, col) && !board[row + direction][col]) {
-      moves.push({ row: row + direction, col });
-      
-      if (row === startRow && !board[row + 2 * direction][col]) {
-        moves.push({ row: row + 2 * direction, col });
-      }
-    }
-
-    for (const dc of [-1, 1]) {
-      if (isValidSquare(row + direction, col + dc)) {
-        const target = board[row + direction][col + dc];
-        if (target && (target === target.toUpperCase()) !== isWhite) {
-          moves.push({ row: row + direction, col: col + dc });
-        }
-      }
-    }
-
-    return moves;
-  };
-
-  const getKnightMoves = (row, col, isWhite) => {
-    const moves = [];
-    const knightMoves = [
-      [-2, -1], [-2, 1], [-1, -2], [-1, 2],
-      [1, -2], [1, 2], [2, -1], [2, 1]
-    ];
-
-    for (const [dr, dc] of knightMoves) {
-      const newRow = row + dr;
-      const newCol = col + dc;
-      if (isValidSquare(newRow, newCol)) {
-        const target = board[newRow][newCol];
-        if (!target || (target === target.toUpperCase()) !== isWhite) {
-          moves.push({ row: newRow, col: newCol });
-        }
-      }
-    }
-
-    return moves;
-  };
-
-  const getBishopMoves = (row, col, isWhite) => {
-    const moves = [];
-    const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-
-    for (const [dr, dc] of directions) {
-      for (let i = 1; i < 8; i++) {
-        const newRow = row + dr * i;
-        const newCol = col + dc * i;
-        
-        if (!isValidSquare(newRow, newCol)) break;
-        
-        const target = board[newRow][newCol];
-        if (!target) {
-          moves.push({ row: newRow, col: newCol });
-        } else {
-          if ((target === target.toUpperCase()) !== isWhite) {
-            moves.push({ row: newRow, col: newCol });
-          }
-          break;
-        }
-      }
-    }
-
-    return moves;
-  };
-
-  const getRookMoves = (row, col, isWhite) => {
-    const moves = [];
-    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-
-    for (const [dr, dc] of directions) {
-      for (let i = 1; i < 8; i++) {
-        const newRow = row + dr * i;
-        const newCol = col + dc * i;
-        
-        if (!isValidSquare(newRow, newCol)) break;
-        
-        const target = board[newRow][newCol];
-        if (!target) {
-          moves.push({ row: newRow, col: newCol });
-        } else {
-          if ((target === target.toUpperCase()) !== isWhite) {
-            moves.push({ row: newRow, col: newCol });
-          }
-          break;
-        }
-      }
-    }
-
-    return moves;
-  };
-
-  const getQueenMoves = (row, col, isWhite) => {
-    return [...getBishopMoves(row, col, isWhite), ...getRookMoves(row, col, isWhite)];
-  };
-
-  const getKingMoves = (row, col, isWhite) => {
-    const moves = [];
-    const directions = [
-      [-1, -1], [-1, 0], [-1, 1],
-      [0, -1], [0, 1],
-      [1, -1], [1, 0], [1, 1]
-    ];
-
-    for (const [dr, dc] of directions) {
-      const newRow = row + dr;
-      const newCol = col + dc;
-      
-      if (isValidSquare(newRow, newCol)) {
-        const target = board[newRow][newCol];
-        if (!target || (target === target.toUpperCase()) !== isWhite) {
-          moves.push({ row: newRow, col: newCol });
-        }
-      }
-    }
-
-    return moves;
-  };
-
-  const isValidSquare = (row, col) => {
-    return row >= 0 && row < 8 && col >= 0 && col < 8;
-  };
 
   const makeMove = (fromRow, fromCol, toRow, toCol) => {
     console.log('Making move:', { fromRow, fromCol, toRow, toCol, playerId, roomId });
@@ -313,13 +203,14 @@ const Game = () => {
               const isSelected = selectedSquare?.row === rowIndex && selectedSquare?.col === colIndex;
               const isPossibleMove = possibleMoves.some(move => move.row === rowIndex && move.col === colIndex);
               
+              
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
                   className={`w-16 h-16 flex items-center justify-center text-5xl cursor-pointer transition-all duration-200
                     ${isLight ? 'board-light' : 'board-dark'}
                     ${isSelected ? 'ring-4 ring-yellow-400 ring-inset' : ''}
-                    ${isPossibleMove ? 'ring-2 ring-green-400 ring-inset' : ''}
+                    ${isPossibleMove ? 'ring-4 ring-green-500 ring-inset bg-green-200 bg-opacity-50' : ''}
                     hover:brightness-110
                   `}
                   onClick={() => handleSquareClick(rowIndex, colIndex)}
@@ -360,11 +251,35 @@ const Game = () => {
           </div>
 
           {gameResult && (
-            <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 rounded-lg text-center">
-              <h2 className="text-xl font-bold text-yellow-800">
-                {gameResult.winner ? `${gameResult.winner} wins!` : 'Draw!'}
+            <div className={`mb-6 p-4 border rounded-lg text-center ${
+              gameResult.winner ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'
+            }`}>
+              <h2 className={`text-xl font-bold ${
+                gameResult.winner ? 'text-green-800' : 'text-yellow-800'
+              }`}>
+                {gameResult.status === 'checkmate' && `${gameResult.winner} wins by checkmate!`}
+                {gameResult.status === 'stalemate' && 'Draw! (Stalemate)'}
+                {gameResult.status === 'timeout' && `${gameResult.winner} wins on time!`}
+                {gameResult.status === 'resigned' && `${gameResult.winner} wins! (${gameResult.reason})`}
+                {!gameResult.status && (gameResult.winner ? `${gameResult.winner} wins!` : 'Draw!')}
               </h2>
-              <p className="text-yellow-700">{gameResult.reason}</p>
+              <p className={`${
+                gameResult.winner ? 'text-green-700' : 'text-yellow-700'
+              }`}>
+                {gameResult.reason}
+              </p>
+            </div>
+          )}
+
+          {/* Show check status when not game over */}
+          {!gameResult && gameState === 'check' && (
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 rounded-lg text-center">
+              <h2 className="text-xl font-bold text-red-800">
+                Check!
+              </h2>
+              <p className="text-red-700">
+                {currentPlayer === 'white' ? 'White' : 'Black'} is in check
+              </p>
             </div>
           )}
 

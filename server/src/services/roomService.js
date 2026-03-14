@@ -1,5 +1,5 @@
 import { INITIAL_BOARD } from '../utils/constants.js';
-import { validateMove } from '../utils/validateMove.js';
+import { Chess } from 'chess.js';
 
 class RoomService {
   constructor() {
@@ -8,7 +8,7 @@ class RoomService {
 
   createRoom(roomName, hostPlayer, timeControl = 600) {
     const roomId = this.generateRoomId();
-    
+
     const room = {
       id: roomId,
       name: roomName,
@@ -17,6 +17,7 @@ class RoomService {
       status: 'waiting',
       timeControl,
       board: this.deepCopyBoard(INITIAL_BOARD),
+      chessFen: new Chess().fen(),
       currentPlayer: 'white',
       moveHistory: [],
       capturedPieces: { white: [], black: [] },
@@ -113,6 +114,7 @@ class RoomService {
 
     room.status = 'playing';
     room.board = this.deepCopyBoard(INITIAL_BOARD);
+    room.chessFen = new Chess().fen();
     room.currentPlayer = 'white';
     room.moveHistory = [];
     room.capturedPieces = { white: [], black: [] };
@@ -128,7 +130,10 @@ class RoomService {
       throw new Error('Room not found');
     }
 
-    if (room.status !== 'playing') {
+    const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw', 'timeout', 'resigned'];
+    const isActuallyOver = room.status === 'ended' && room.gameResult && GAME_OVER_STATUSES.includes(room.gameResult.status);
+
+    if (room.status !== 'playing' && isActuallyOver) {
       throw new Error('Game is not in progress');
     }
 
@@ -139,7 +144,7 @@ class RoomService {
 
     const isWhiteTurn = room.currentPlayer === 'white';
     const isWhitePlayer = player.color === 'white';
-    
+
     if (isWhiteTurn !== isWhitePlayer) {
       throw new Error('Not your turn');
     }
@@ -149,15 +154,44 @@ class RoomService {
       throw new Error('No piece at source position');
     }
 
-    const validation = validateMove(from, to, room.board, room.currentPlayer);
-    if (!validation.valid) {
-      throw new Error(validation.reason || 'Invalid move');
+    const chess = new Chess(room.chessFen);
+
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const fromSquare = `${files[from.col]}${8 - from.row}`;
+    const toSquare = `${files[to.col]}${8 - to.row}`;
+
+    // Calculate possible promotion
+    let promotion = undefined;
+    if (piece.toLowerCase() === 'p' && (to.row === 0 || to.row === 7)) {
+      promotion = 'q'; // Always auto-promote to Queen for now to simplify
+    }
+
+    let moveResult;
+    try {
+      moveResult = chess.move({
+        from: fromSquare,
+        to: toSquare,
+        promotion
+      });
+    } catch (e) {
+      throw new Error('Invalid move');
+    }
+
+    if (!moveResult) {
+      throw new Error('Invalid move');
     }
 
     // Make the move
-    const capturedPiece = room.board[to.row][to.col];
-    room.board[to.row][to.col] = piece;
-    room.board[from.row][from.col] = null;
+    // Handle en passant, castling, promotion correctly by syncing board with chess.js
+    room.chessFen = chess.fen();
+    room.board = this.getBoardArray(chess);
+
+    let capturedPiece = null;
+    if (moveResult.captured) {
+       capturedPiece = room.currentPlayer === 'white' 
+          ? moveResult.captured.toLowerCase() 
+          : moveResult.captured.toUpperCase();
+    }
 
     // Record move
     const move = {
@@ -232,6 +266,15 @@ class RoomService {
 
   deepCopyBoard(board) {
     return board.map(row => [...row]);
+  }
+
+  getBoardArray(chess) {
+    return chess.board().map(row => 
+      row.map(piece => {
+        if (!piece) return null;
+        return piece.color === 'w' ? piece.type.toUpperCase() : piece.type.toLowerCase();
+      })
+    );
   }
 }
 
