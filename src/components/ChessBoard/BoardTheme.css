@@ -1,3 +1,23 @@
+:root {
+  --square-size: clamp(40px, 10vmin, 80px);
+  --piece-size: calc(var(--square-size) * 0.7);
+}
+
+.board-container {
+  max-width: fit-content;
+  user-select: none;
+}
+
+.chess-square {
+  width: var(--square-size);
+  height: var(--square-size);
+}
+
+.chess-piece {
+  font-size: var(--piece-size);
+  line-height: var(--square-size);
+}
+
 .board-light {
   background-color: #f0d9b5;
 }
@@ -6,16 +26,25 @@
   background-color: #b58863;
 }
 
+.possible-move-hint::after {
+  content: '';
+  position: absolute;
+  width: 25%;
+  height: 25%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+}
+
 .highlight {
-  background-color: #f6f669 !important;
+  background-color: rgba(246, 246, 105, 0.8) !important;
 }
 
 .check {
-  background-color: #ff6b6b !important;
+  background: radial-gradient(circle, #ff6b6b 0%, #ff6b6b 40%, transparent 100%) !important;
 }
 
 .checkmate {
-  background-color: #ff0000 !important;
+  background: radial-gradient(circle, #ff0000 0%, #ff0000 50%, transparent 100%) !important;
 }
 
 .wood-theme .board-light {

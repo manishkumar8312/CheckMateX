@@ -195,7 +195,7 @@ const Game = () => {
     };
 
     return (
-      <div className={`inline-block border-4 border-gray-800 rounded-lg shadow-2xl ${theme}-theme`}>
+      <div className={`relative inline-block border-8 border-gray-900 rounded-sm shadow-2xl ${theme}-theme board-container`}>
         {board.map((row, rowIndex) => (
           <div key={rowIndex} className="flex">
             {row.map((piece, colIndex) => {
@@ -203,24 +203,30 @@ const Game = () => {
               const isSelected = selectedSquare?.row === rowIndex && selectedSquare?.col === colIndex;
               const isPossibleMove = possibleMoves.some(move => move.row === rowIndex && move.col === colIndex);
               
-              
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
-                  className={`w-16 h-16 flex items-center justify-center text-5xl cursor-pointer transition-all duration-200
+                  className={`relative flex items-center justify-center cursor-pointer transition-all duration-150
+                    chess-square
                     ${isLight ? 'board-light' : 'board-dark'}
-                    ${isSelected ? 'ring-4 ring-yellow-400 ring-inset' : ''}
-                    ${isPossibleMove ? 'ring-4 ring-green-500 ring-inset bg-green-200 bg-opacity-50' : ''}
-                    hover:brightness-110
+                    ${isSelected ? 'ring-4 ring-yellow-400 ring-inset z-10' : ''}
+                    ${isPossibleMove ? 'possible-move-hint' : ''}
+                    hover:brightness-105 active:scale-95
                   `}
                   onClick={() => handleSquareClick(rowIndex, colIndex)}
                 >
+                  {isPossibleMove && !piece && (
+                    <div className="w-3 h-3 bg-black bg-opacity-10 rounded-full" />
+                  )}
                   {piece && (
-                    <span className={`select-none drop-shadow-lg ${
+                    <span className={`chess-piece select-none drop-shadow-md z-20 ${
                       piece === piece.toUpperCase() ? 'text-white' : 'text-black'
                     }`}>
                       {pieces[piece]}
                     </span>
+                  )}
+                  {isPossibleMove && piece && (
+                    <div className="absolute inset-0 border-4 border-black border-opacity-10 rounded-full m-1" />
                   )}
                 </div>
               );
@@ -283,43 +289,50 @@ const Game = () => {
             </div>
           )}
 
-          <div className="flex gap-8">
-            <div className="flex-1 flex justify-center">
+          <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
+            <div className="flex-1 flex justify-center w-full lg:w-auto">
               {renderBoard()}
             </div>
 
-            <div className="w-80 space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-2">Game Status</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Status:</span>
-                    <span className="font-medium capitalize">{gameState}</span>
+            <div className="w-full lg:w-80 space-y-4">
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h3 className="font-bold text-gray-700 mb-3 border-b pb-2">Game Status</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Status:</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
+                      gameState === 'check' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                    }`}>
+                      {gameState}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Current Turn:</span>
-                    <span className="font-medium capitalize">{currentPlayer}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500">To Move:</span>
+                    <div className="flex items-center space-x-2">
+                       <div className={`w-3 h-3 rounded-full ${currentPlayer === 'white' ? 'bg-white border border-gray-400' : 'bg-gray-900'}`} />
+                       <span className="font-bold capitalize">{currentPlayer}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-2">Players</h3>
-                <div className="space-y-2">
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h3 className="font-bold text-gray-700 mb-3 border-b pb-2">Players</h3>
+                <div className="space-y-3">
                   {players.map((player) => (
                     <div key={player.id} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-4 h-4 rounded-full shadow-inner ${
                           player.color === 'white' 
-                            ? 'bg-white border-2 border-black' 
-                            : 'bg-black'
+                            ? 'bg-white border-2 border-gray-300' 
+                            : 'bg-gray-900'
                         }`} />
-                        <span className="text-sm">{player.name}</span>
-                        {player.id === playerId && (
-                          <span className="text-xs text-blue-600">(You)</span>
-                        )}
+                        <span className={`text-sm font-medium ${player.id === playerId ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                          {player.name}
+                          {player.id === playerId && " (You)"}
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-500 capitalize">{player.color}</span>
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{player.color}</span>
                     </div>
                   ))}
                 </div>
