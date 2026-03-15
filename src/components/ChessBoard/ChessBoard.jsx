@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import './BoardTheme.css';
 
-const ChessBoard = () => {
+const ChessBoard = ({ orientation = 'white' }) => {
   const [selectedSquare, setSelectedSquare] = useState(null);
-  const [board, setBoard] = useState(initializeBoard());
+  const [board, setBoard] = useState(initializeBoard(orientation));
 
-  function initializeBoard() {
+  function initializeBoard(orientation) {
     const pieces = {
       'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
       'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
@@ -22,7 +22,8 @@ const ChessBoard = () => {
       ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
 
-    return initialSetup.map(row => row.map(piece => piece ? pieces[piece] : null));
+    const mappedBoard = initialSetup.map(row => row.map(piece => piece ? pieces[piece] : null));
+    return mappedBoard;
   }
 
   const handleSquareClick = (row, col) => {
@@ -55,30 +56,37 @@ const ChessBoard = () => {
     return selectedSquare && selectedSquare.row === row && selectedSquare.col === col;
   };
 
-  return (
-    <div className="inline-block border-4 border-gray-800 rounded-lg shadow-2xl">
-      {board.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex">
-          {row.map((piece, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              className={`w-16 h-16 flex items-center justify-center text-5xl cursor-pointer transition-all duration-200 hover:brightness-110
-                ${getSquareColor(rowIndex, colIndex)}
-                ${isSelected(rowIndex, colIndex) ? 'ring-4 ring-yellow-400 ring-inset' : ''}
-              `}
-              onClick={() => handleSquareClick(rowIndex, colIndex)}
-            >
-              {piece && (
-                <span className={`select-none ${piece === piece.toUpperCase() ? 'text-white drop-shadow-lg' : 'text-black drop-shadow-lg'}`}>
-                  {piece}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
+    const isRotated = orientation === 'black';
+    const rowIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+    const colIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+
+    return (
+      <div className="inline-block border-4 border-gray-800 rounded-lg shadow-2xl">
+        {rowIndices.map((rowIndex) => (
+          <div key={rowIndex} className="flex">
+            {colIndices.map((colIndex) => {
+              const piece = board[rowIndex][colIndex];
+              return (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  className={`w-16 h-16 flex items-center justify-center text-5xl cursor-pointer transition-all duration-200 hover:brightness-110
+                    ${getSquareColor(rowIndex, colIndex)}
+                    ${isSelected(rowIndex, colIndex) ? 'ring-4 ring-yellow-400 ring-inset' : ''}
+                  `}
+                  onClick={() => handleSquareClick(rowIndex, colIndex)}
+                >
+                  {piece && (
+                    <span className={`select-none ${piece === piece.toUpperCase() ? 'text-white drop-shadow-lg' : 'text-black drop-shadow-lg'}`}>
+                      {piece}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
 };
 
 export default ChessBoard;

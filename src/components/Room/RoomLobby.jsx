@@ -303,7 +303,7 @@ const RoomLobby = () => {
             
             <div className="flex gap-8">
               <div className="flex-1">
-                <ChessBoard />
+                <ChessBoard orientation={players.find(p => p.id === playerId)?.id === players[1]?.id ? 'black' : 'white'} />
               </div>
               
               <div className="w-64 space-y-4">

@@ -194,11 +194,18 @@ const Game = () => {
       'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
     };
 
+    const playerColor = players.find(p => p.id === playerId)?.color || 'white';
+    const isRotated = playerColor === 'black';
+
+    const rowIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+    const colIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+
     return (
       <div className={`relative inline-block border-8 border-gray-900 rounded-sm shadow-2xl ${theme}-theme board-container`}>
-        {board.map((row, rowIndex) => (
+        {rowIndices.map((rowIndex) => (
           <div key={rowIndex} className="flex">
-            {row.map((piece, colIndex) => {
+            {colIndices.map((colIndex) => {
+              const piece = board[rowIndex][colIndex];
               const isLight = (rowIndex + colIndex) % 2 === 0;
               const isSelected = selectedSquare?.row === rowIndex && selectedSquare?.col === colIndex;
               const isPossibleMove = possibleMoves.some(move => move.row === rowIndex && move.col === colIndex);
