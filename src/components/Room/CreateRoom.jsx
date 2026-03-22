@@ -20,7 +20,7 @@ const CreateRoom = () => {
     }
 
     setIsCreating(true);
-    
+
     // Artificial delay to show the animation
     setTimeout(() => {
       try {
@@ -45,7 +45,7 @@ const CreateRoom = () => {
 
           const createdRoom = response.room;
           const targetPath = createdRoom.isAiOpponent ? `/game/${createdRoom.id}` : `/room/${createdRoom.id}`;
-          
+
           if (createdRoom.isAiOpponent && response.player) {
             const storagePrefix = `room:${createdRoom.id}`;
             sessionStorage.setItem(`${storagePrefix}:playerId`, response.player.id);

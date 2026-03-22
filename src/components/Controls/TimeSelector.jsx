@@ -27,11 +27,10 @@ const TimeSelector = ({ currentTime, onTimeChange }) => {
                 .map((timeControl) => (
                   <label
                     key={timeControl.value}
-                    className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                      currentTime === timeControl.value
-                        ? 'bg-blue-500 text-white border-blue-600'
-                        : 'hover:bg-gray-50 border-gray-300'
-                    }`}
+                    className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors ${currentTime === timeControl.value
+                      ? 'bg-blue-500 text-white border-blue-600'
+                      : 'hover:bg-gray-50 border-gray-300'
+                      }`}
                   >
                     <input
                       type="radio"

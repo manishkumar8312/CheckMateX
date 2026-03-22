@@ -63,6 +63,7 @@ class TimerService {
     timer.isWhiteTimerRunning = false;
     timer.isBlackTimerRunning = false;
     timer.isPaused = true;
+    this.notifyListeners(roomId, { ...this.getTimerStatus(roomId), timeout: false });
   }
 
   switchTimer(roomId, color) {
@@ -123,6 +124,7 @@ class TimerService {
 
     timer.isWhiteTimerRunning = false;
     timer.isBlackTimerRunning = false;
+    this.notifyListeners(roomId, { ...this.getTimerStatus(roomId), timeout: false });
   }
 
   resumeTimer(roomId, color) {

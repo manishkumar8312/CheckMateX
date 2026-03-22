@@ -16,7 +16,7 @@ const JoinRoom = () => {
     }
 
     setIsJoining(true);
-    
+
     // Artificial delay to show the animation
     setTimeout(() => {
       try {

@@ -54,11 +54,13 @@ export const registerGameSocket = (io, socket) => {
       if (isGameOver) {
         result.room.status = gameState.status;
         result.room.gameResult = gameState;
+        // Stop timer due to game end
+        timerService.pauseTimer(payload.roomId);
+      } else {
+        // Switch timer to the next player
+        const nextPlayer = result.room.currentPlayer;
+        timerService.switchTimer(payload.roomId, nextPlayer);
       }
-
-      // Switch timer to the next player
-      const nextPlayer = result.room.currentPlayer;
-      timerService.switchTimer(payload.roomId, nextPlayer);
 
       io.to(payload.roomId).emit('moveMade', {
         ...result,
@@ -146,11 +148,23 @@ export const registerGameSocket = (io, socket) => {
       // Evaluate game state after AI move
       const gameState = chessService.evaluateGameState(result.room.chessFen, result.room.currentPlayer);
       
+      const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw'];
+      const isGameOver = GAME_OVER_STATUSES.includes(gameState.status);
+
+      if (isGameOver) {
+        result.room.status = gameState.status;
+        result.room.gameResult = gameState;
+        timerService.pauseTimer(roomId);
+      } else {
+        const nextPlayer = result.room.currentPlayer;
+        timerService.switchTimer(roomId, nextPlayer);
+      }
+
       // Emit the move to all clients in the room
       io.to(roomId).emit('moveMade', {
         room: result.room,
         move: result.move,
-        gameState
+        gameState: isGameOver ? gameState : null
       });
       
       aiLog('AI move emitted to room', roomId);
