@@ -12,7 +12,9 @@ const createSocketServer = (app) => {
   /* Socket.IO server */
   const io = new Server(server, {
     cors: config.cors,
-    transports: ["websocket", "polling"] // Support both transports
+    transports: ["websocket"],
+    pingTimeout: 60000,
+    pingInterval: 25000
   });
 
   return { server, io };

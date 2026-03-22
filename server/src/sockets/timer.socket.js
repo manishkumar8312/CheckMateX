@@ -1,4 +1,7 @@
 import { timerService } from '../services/index.js';
+import { handleTimerExpired } from '../controllers/gameController.js';
+
+const expirationListeners = new Map();
 
 export const registerTimerSocket = (io, socket) => {
   if (!socket.data) {
@@ -18,6 +21,30 @@ export const registerTimerSocket = (io, socket) => {
   socket.on('subscribeTimer', ({ roomId }, callback) => {
     try {
       if (!roomId) throw new Error('Room ID required');
+
+      // Add a room-level expiration listener if it doesn't exist
+      if (!expirationListeners.has(roomId)) {
+        const expirationUnsubscribe = timerService.onTick(roomId, (status) => {
+          if (status.timeout) {
+            try {
+              const result = handleTimerExpired({
+                roomId,
+                color: status.winner === 'white' ? 'black' : 'white'
+              });
+              io.to(roomId).emit('gameEnded', result.gameResult);
+
+              // Stop this listener once game ends
+              const unsub = expirationListeners.get(roomId);
+              if (unsub) unsub();
+              expirationListeners.delete(roomId);
+            } catch (err) {
+              console.error('Error handling timer expiration:', err);
+            }
+          }
+        });
+        expirationListeners.set(roomId, expirationUnsubscribe);
+      }
+
       const unsubscribe = timerService.onTick(roomId, (status) => {
         io.to(roomId).emit('timerUpdate', { roomId, ...status });
       });

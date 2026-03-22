@@ -15,7 +15,7 @@ export const registerGameSocket = (io, socket) => {
       const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw', 'timeout', 'resigned'];
       const currentGameState = state.gameState;
       const isGameOver = currentGameState && GAME_OVER_STATUSES.includes(currentGameState.status);
-      
+
       // Also filter the room's stored result to ensure no stale "check" results block the UI
       const roomResult = state.room.gameResult;
       const filteredRoomResult = (roomResult && GAME_OVER_STATUSES.includes(roomResult.status)) ? roomResult : null;

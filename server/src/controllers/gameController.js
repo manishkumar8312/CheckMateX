@@ -68,10 +68,11 @@ export const handleTimerExpired = ({ roomId, color }) => {
   const winner = color === 'white' ? 'black' : 'white';
   const result = {
     status: 'timeout',
-    winner,
-    reason: `${color} ran out of time`,
+    winner: winner.charAt(0).toUpperCase() + winner.slice(1),
+    reason: `${color.charAt(0).toUpperCase() + color.slice(1)} ran out of time`,
   };
 
   timerService.stopTimer(roomId);
-  return roomService.endGame(roomId, result);
+  const updatedRoom = roomService.endGame(roomId, result);
+  return updatedRoom;
 };

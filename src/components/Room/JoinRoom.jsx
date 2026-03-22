@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LoadingOverlay from '../UI/LoadingOverlay';
 
 const JoinRoom = () => {
   const [roomId, setRoomId] = useState('');
@@ -16,19 +17,21 @@ const JoinRoom = () => {
 
     setIsJoining(true);
     
-    try {
-      navigate(`/room/${roomId}`, {
-        state: {
-          playerName,
-          isHost: false
-        }
-      });
-    } catch (error) {
-      console.error('Error joining room:', error);
-      alert('Failed to join room. Please check the room ID and try again.');
-    } finally {
-      setIsJoining(false);
-    }
+    // Artificial delay to show the animation
+    setTimeout(() => {
+      try {
+        navigate(`/room/${roomId}`, {
+          state: {
+            playerName,
+            isHost: false
+          }
+        });
+      } catch (error) {
+        console.error('Error joining room:', error);
+        alert('Failed to join room. Please check the room ID and try again.');
+        setIsJoining(false);
+      }
+    }, 1200);
   };
 
   return (
@@ -83,6 +86,7 @@ const JoinRoom = () => {
           <li>Click "Join Room" to enter the game</li>
         </ol>
       </div>
+      {isJoining && <LoadingOverlay message="Joining the arena..." />}
     </div>
   );
 };

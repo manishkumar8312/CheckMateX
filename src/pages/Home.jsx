@@ -25,15 +25,15 @@ const Home = () => {
           </div>
 
           <div className="space-y-6">
-            <ThemeSelector 
-              currentTheme="classic" 
-              onThemeChange={(theme) => console.log('Theme changed:', theme)} 
+            <ThemeSelector
+              currentTheme="classic"
+              onThemeChange={(theme) => console.log('Theme changed:', theme)}
             />
-            <TimeSelector 
-              currentTime={10} 
-              onTimeChange={(time) => console.log('Time changed:', time)} 
+            <TimeSelector
+              currentTime={10}
+              onTimeChange={(time) => console.log('Time changed:', time)}
             />
-            
+
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold mb-4">How to Play</h3>
               <div className="space-y-3 text-sm text-gray-600">

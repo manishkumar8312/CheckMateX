@@ -28,7 +28,7 @@ const Game = () => {
   const [playerId, setPlayerId] = useState(() => getSessionValue('playerId'));
   const [playerName, setPlayerName] = useState(() => getSessionValue('playerName'));
   const [chessFen, setChessFen] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-  
+
   const chess = useMemo(() => new Chess(chessFen), [chessFen]);
 
   const fromCoords = (row, col) => {
@@ -58,7 +58,7 @@ const Game = () => {
       if (state.chessFen) setChessFen(state.chessFen);
       setPlayers(state.players);
       setCurrentPlayer(state.currentPlayer);
-      setGameResult(state.result);
+      if (state.result) setGameResult(state.result);
       if (!playerId) {
         const inferredPlayer = state.players?.find(p => p.name === playerName);
         if (inferredPlayer) {
@@ -70,13 +70,13 @@ const Game = () => {
     socket.on('moveMade', (moveData) => {
       console.log('=== MOVE MADE EVENT ===');
       console.log('Move data:', moveData);
-      
+
       setBoard(moveData.room?.board || moveData.board);
       if (moveData.room?.chessFen) setChessFen(moveData.room.chessFen);
       setCurrentPlayer(moveData.room?.currentPlayer || moveData.currentPlayer);
       setSelectedSquare(null);
       setPossibleMoves([]);
-      
+
       // Only treat as game over for terminal states — never for "check"
       const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw', 'timeout', 'resigned'];
       if (moveData.gameState && GAME_OVER_STATUSES.includes(moveData.gameState.status)) {
@@ -95,8 +95,24 @@ const Game = () => {
     });
 
     socket.on('gameEnded', (result) => {
-      setGameResult(result);
-      setGameState('ended');
+      if (result) {
+        setGameResult(result);
+        setGameState('ended');
+      }
+    });
+
+    socket.on('timerUpdate', (data) => {
+      if (data.timeout) {
+        setGameResult(prev => {
+          if (prev) return prev;
+          return {
+            status: 'timeout',
+            winner: data.winner ? (typeof data.winner === 'string' ? (data.winner.charAt(0).toUpperCase() + data.winner.slice(1)) : data.winner) : 'Unknown',
+            reason: data.reason || 'Time out'
+          };
+        });
+        setGameState('ended');
+      }
     });
 
     socket.on('error', (error) => {
@@ -110,6 +126,7 @@ const Game = () => {
       socket.off('moveMade');
       socket.off('checkStatus');
       socket.off('gameEnded');
+      socket.off('timerUpdate');
       socket.off('error');
     };
   }, [socket, roomId, navigate]);
@@ -117,7 +134,7 @@ const Game = () => {
   const handleSquareClick = (row, col) => {
     const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw', 'timeout', 'resigned'];
     const isGameOver = gameResult && GAME_OVER_STATUSES.includes(gameResult.status);
-    
+
     if (isGameOver) return;
 
     if (selectedSquare) {
@@ -209,7 +226,7 @@ const Game = () => {
               const isLight = (rowIndex + colIndex) % 2 === 0;
               const isSelected = selectedSquare?.row === rowIndex && selectedSquare?.col === colIndex;
               const isPossibleMove = possibleMoves.some(move => move.row === rowIndex && move.col === colIndex);
-              
+
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
@@ -226,9 +243,8 @@ const Game = () => {
                     <div className="w-3 h-3 bg-black bg-opacity-10 rounded-full" />
                   )}
                   {piece && (
-                    <span className={`chess-piece select-none drop-shadow-md z-20 ${
-                      piece === piece.toUpperCase() ? 'text-white' : 'text-black'
-                    }`}>
+                    <span className={`chess-piece select-none drop-shadow-md z-20 ${piece === piece.toUpperCase() ? 'text-white' : 'text-black'
+                      }`}>
                       {pieces[piece]}
                     </span>
                   )}
@@ -264,21 +280,18 @@ const Game = () => {
           </div>
 
           {gameResult && (
-            <div className={`mb-6 p-4 border rounded-lg text-center ${
-              gameResult.winner ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'
-            }`}>
-              <h2 className={`text-xl font-bold ${
-                gameResult.winner ? 'text-green-800' : 'text-yellow-800'
+            <div className={`mb-6 p-4 border rounded-lg text-center ${gameResult.winner ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'
               }`}>
+              <h2 className={`text-xl font-bold ${gameResult.winner ? 'text-green-800' : 'text-yellow-800'
+                }`}>
                 {gameResult.status === 'checkmate' && `${gameResult.winner} wins by checkmate!`}
                 {gameResult.status === 'stalemate' && 'Draw! (Stalemate)'}
                 {gameResult.status === 'timeout' && `${gameResult.winner} wins on time!`}
                 {gameResult.status === 'resigned' && `${gameResult.winner} wins! (${gameResult.reason})`}
                 {!gameResult.status && (gameResult.winner ? `${gameResult.winner} wins!` : 'Draw!')}
               </h2>
-              <p className={`${
-                gameResult.winner ? 'text-green-700' : 'text-yellow-700'
-              }`}>
+              <p className={`${gameResult.winner ? 'text-green-700' : 'text-yellow-700'
+                }`}>
                 {gameResult.reason}
               </p>
             </div>
@@ -307,17 +320,16 @@ const Game = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500">Status:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
-                      gameState === 'check' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${gameState === 'check' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                      }`}>
                       {gameState}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500">To Move:</span>
                     <div className="flex items-center space-x-2">
-                       <div className={`w-3 h-3 rounded-full ${currentPlayer === 'white' ? 'bg-white border border-gray-400' : 'bg-gray-900'}`} />
-                       <span className="font-bold capitalize">{currentPlayer}</span>
+                      <div className={`w-3 h-3 rounded-full ${currentPlayer === 'white' ? 'bg-white border border-gray-400' : 'bg-gray-900'}`} />
+                      <span className="font-bold capitalize">{currentPlayer}</span>
                     </div>
                   </div>
                 </div>
@@ -329,11 +341,10 @@ const Game = () => {
                   {players.map((player) => (
                     <div key={player.id} className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded-full shadow-inner ${
-                          player.color === 'white' 
-                            ? 'bg-white border-2 border-gray-300' 
-                            : 'bg-gray-900'
-                        }`} />
+                        <div className={`w-4 h-4 rounded-full shadow-inner ${player.color === 'white'
+                          ? 'bg-white border-2 border-gray-300'
+                          : 'bg-gray-900'
+                          }`} />
                         <span className={`text-sm font-medium ${player.id === playerId ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
                           {player.name}
                           {player.id === playerId && " (You)"}
@@ -345,15 +356,15 @@ const Game = () => {
                 </div>
               </div>
 
-              <Timer 
+              <Timer
                 roomId={roomId}
                 currentPlayer={currentPlayer}
-                initialTime={timeControl} 
+                initialTime={timeControl}
               />
 
-              <ThemeSelector 
-                currentTheme={theme} 
-                onThemeChange={setTheme} 
+              <ThemeSelector
+                currentTheme={theme}
+                onThemeChange={setTheme}
               />
             </div>
           </div>

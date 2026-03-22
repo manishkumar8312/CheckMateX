@@ -55,7 +55,7 @@ const Timer = ({ roomId, initialTime = 600, currentPlayer = 'white' }) => {
             {formatTime(whiteTime)}
           </div>
         </div>
-        
+
         {/* Black Timer */}
         <div className={`text-center ${currentPlayer === 'black' ? 'ring-2 ring-blue-500 rounded-lg p-2' : ''}`}>
           <div className="text-sm font-medium text-gray-600 mb-1">Black</div>
@@ -64,7 +64,7 @@ const Timer = ({ roomId, initialTime = 600, currentPlayer = 'white' }) => {
           </div>
         </div>
       </div>
-      
+
       <div className="text-xs text-gray-500 text-center">
         {isWhiteTimerRunning && "White's turn"}
         {isBlackTimerRunning && "Black's turn"}

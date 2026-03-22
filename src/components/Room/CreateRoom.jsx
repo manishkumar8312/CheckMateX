@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../socket/socket';
+import LoadingOverlay from '../UI/LoadingOverlay';
 
 const CreateRoom = () => {
   const [roomName, setRoomName] = useState('');
@@ -19,35 +20,38 @@ const CreateRoom = () => {
 
     setIsCreating(true);
     
-    try {
-      socket.connect?.();
-      socket.emit('createRoom', {
-        roomName,
-        playerName,
-        timeControl: parseInt(timeControl, 10)
-      }, (response) => {
-        if (!response?.success) {
-          alert(response?.message || 'Failed to create room. Please try again.');
-          setIsCreating(false);
-          return;
-        }
-
-        const createdRoom = response.room;
-        navigate(`/room/${createdRoom.id}`, {
-          state: {
-            roomName: createdRoom.name,
-            playerName,
-            timeControl: createdRoom.timeControl,
-            isHost: true
+    // Artificial delay to show the animation
+    setTimeout(() => {
+      try {
+        socket.connect?.();
+        socket.emit('createRoom', {
+          roomName,
+          playerName,
+          timeControl: parseInt(timeControl, 10)
+        }, (response) => {
+          if (!response?.success) {
+            alert(response?.message || 'Failed to create room. Please try again.');
+            setIsCreating(false);
+            return;
           }
+
+          const createdRoom = response.room;
+          navigate(`/room/${createdRoom.id}`, {
+            state: {
+              roomName: createdRoom.name,
+              playerName,
+              timeControl: createdRoom.timeControl,
+              isHost: true
+            }
+          });
+          setIsCreating(false);
         });
+      } catch (error) {
+        console.error('Error creating room:', error);
+        alert('Failed to create room. Please try again.');
         setIsCreating(false);
-      });
-    } catch (error) {
-      console.error('Error creating room:', error);
-      alert('Failed to create room. Please try again.');
-      setIsCreating(false);
-    }
+      }
+    }, 1200);
   };
 
   return (
@@ -108,6 +112,7 @@ const CreateRoom = () => {
           {isCreating ? 'Creating...' : 'Create Room'}
         </button>
       </form>
+      {isCreating && <LoadingOverlay message="Creating your room..." />}
     </div>
   );
 };

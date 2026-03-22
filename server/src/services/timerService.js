@@ -115,7 +115,7 @@ class TimerService {
 
     this.updateTimer(roomId);
     timer.isPaused = true;
-    
+
     if (timer.interval) {
       clearInterval(timer.interval);
       timer.interval = null;
@@ -202,7 +202,7 @@ class TimerService {
 
   onTick(roomId, listener) {
     const timer = this.timers.get(roomId);
-    if (!timer) return () => {};
+    if (!timer) return () => { };
     timer.listeners.add(listener);
     return () => timer.listeners.delete(listener);
   }
