@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './BoardTheme.css';
 
-const ChessBoard = ({ orientation = 'white' }) => {
+const ChessBoard = ({ orientation = 'white', theme = localStorage.getItem('chessTheme') || 'classic' }) => {
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [board, setBoard] = useState(initializeBoard(orientation));
 
@@ -56,12 +56,12 @@ const ChessBoard = ({ orientation = 'white' }) => {
     return selectedSquare && selectedSquare.row === row && selectedSquare.col === col;
   };
 
-    const isRotated = orientation === 'black';
-    const rowIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
-    const colIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+  const isRotated = orientation === 'black';
+  const rowIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+  const colIndices = isRotated ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
 
-    return (
-      <div className="inline-block border-4 border-gray-800 rounded-lg shadow-2xl">
+  return (
+    <div className={`inline-block border-4 border-gray-800 rounded-lg shadow-2xl ${theme}-theme board-container`}>
         {rowIndices.map((rowIndex) => (
           <div key={rowIndex} className="flex">
             {colIndices.map((colIndex) => {

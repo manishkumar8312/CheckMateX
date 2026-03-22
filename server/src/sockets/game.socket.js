@@ -188,6 +188,44 @@ export const registerGameSocket = (io, socket) => {
     }
   };
 
+  socket.on('leaveGame', ({ roomId, playerId }, callback) => {
+    try {
+      const room = roomService.getRoom(roomId);
+      if (room && room.status === 'playing') {
+        // Stop the timer
+        timerService.pauseTimer(roomId);
+
+        // Figure out who left and who wins
+        const leavingPlayer = room.players.find(p => p.id === playerId);
+        const remainingPlayer = room.players.find(p => p.id !== playerId);
+
+        const result = {
+          status: 'resigned',
+          winner: remainingPlayer?.color
+            ? remainingPlayer.color.charAt(0).toUpperCase() + remainingPlayer.color.slice(1)
+            : 'Opponent',
+          reason: `${leavingPlayer?.name || 'Opponent'} left the game`,
+          leaverName: leavingPlayer?.name || 'Opponent',
+        };
+
+        room.status = 'resigned';
+        room.gameResult = result;
+
+        // Notify the OTHER player still in the room
+        socket.to(roomId).emit('opponentLeft', result);
+        // Also send gameEnded so the leaver's own screen can handle it if needed
+        io.to(roomId).emit('gameEnded', result);
+      }
+
+      socket.leave(roomId);
+      socket.data.roomId = null;
+      socket.data.playerId = null;
+      callback?.({ success: true });
+    } catch (error) {
+      callback?.({ success: false, message: error.message });
+    }
+  });
+
   socket.on('resignGame', (payload, callback) => {
     try {
       const room = resignGame(payload);

@@ -23,13 +23,19 @@ const Game = () => {
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [possibleMoves, setPossibleMoves] = useState([]);
   const [gameResult, setGameResult] = useState(null);
-  const [theme, setTheme] = useState('classic');
+  const [opponentLeftInfo, setOpponentLeftInfo] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem('chessTheme') || 'classic');
   const [timeControl, setTimeControl] = useState(600);
   const [playerId, setPlayerId] = useState(() => getSessionValue('playerId'));
   const [playerName, setPlayerName] = useState(() => getSessionValue('playerName'));
   const [chessFen, setChessFen] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 
   const chess = useMemo(() => new Chess(chessFen), [chessFen]);
+
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('chessTheme', newTheme);
+  };
 
   const fromCoords = (row, col) => {
     const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -108,6 +114,12 @@ const Game = () => {
       }
     });
 
+    socket.on('opponentLeft', (result) => {
+      setOpponentLeftInfo(result);
+      setGameResult(result);
+      setGameState('ended');
+    });
+
     socket.on('timerUpdate', (data) => {
       if (data.timeout) {
         setGameResult(prev => {
@@ -133,6 +145,7 @@ const Game = () => {
       socket.off('moveMade');
       socket.off('checkStatus');
       socket.off('gameEnded');
+      socket.off('opponentLeft');
       socket.off('timerUpdate');
       socket.off('error');
     };
@@ -205,7 +218,7 @@ const Game = () => {
 
   const leaveGame = () => {
     if (socket) {
-      socket.emit('leaveGame', { roomId });
+      socket.emit('leaveGame', { roomId, playerId });
     }
     navigate('/');
   };
@@ -271,15 +284,26 @@ const Game = () => {
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">CheckMateX</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                Room: <span className="font-mono font-bold">{roomId?.toUpperCase()}</span>
-              </span>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-md border border-blue-400/30">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white">
+                  <path d="M5 19h14v2H5z" />
+                  <path d="M19 17 22 7l-5 3-5-6-5 6-5-3 3 10zm-14 0h14" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                CheckMate<span className="text-blue-600">X</span>
+              </h1>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+                Room: <span className="font-mono font-bold text-gray-800">{roomId?.toUpperCase()}</span>
+              </div>
               <button
                 onClick={leaveGame}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm"
               >
                 Leave Game
               </button>
@@ -287,20 +311,82 @@ const Game = () => {
           </div>
 
           {gameResult && (
-            <div className={`mb-6 p-4 border rounded-lg text-center ${gameResult.winner ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'
-              }`}>
-              <h2 className={`text-xl font-bold ${gameResult.winner ? 'text-green-800' : 'text-yellow-800'
-                }`}>
-                {gameResult.status === 'checkmate' && `${gameResult.winner} wins by checkmate!`}
-                {gameResult.status === 'stalemate' && 'Draw! (Stalemate)'}
-                {gameResult.status === 'timeout' && `${gameResult.winner} wins on time!`}
-                {gameResult.status === 'resigned' && `${gameResult.winner} wins! (${gameResult.reason})`}
-                {!gameResult.status && (gameResult.winner ? `${gameResult.winner} wins!` : 'Draw!')}
-              </h2>
-              <p className={`${gameResult.winner ? 'text-green-700' : 'text-yellow-700'
-                }`}>
-                {gameResult.reason}
-              </p>
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.45)',
+              backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+              animation: 'cmx-fade-in 0.4s ease',
+            }}>
+              <style>{`
+                @keyframes cmx-fade-in { from{opacity:0} to{opacity:1} }
+                @keyframes cmx-pop { 0%{opacity:0;transform:scale(0.6) translateY(30px)} 60%{transform:scale(1.08) translateY(-6px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+                @keyframes cmx-shimmer { 0%,100%{background-position:200% center} 50%{background-position:0% center} }
+                @keyframes cmx-confetti-fall { 0%{transform:translateY(-60px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+                .cmx-confetti{position:fixed;top:0;border-radius:2px;animation:cmx-confetti-fall linear infinite;pointer-events:none;}
+              `}</style>
+              {/* Confetti only for non-resignation victories */}
+              {gameResult.status !== 'resigned' && Array.from({ length: 30 }).map((_, i) => {
+                const colors = ['#f59e0b','#3b82f6','#10b981','#ef4444','#a855f7','#ec4899','#06b6d4','#f97316'];
+                const sz = `${8 + (i % 5) * 3}px`;
+                return <div key={i} className="cmx-confetti" style={{
+                  left:`${(i*3.4)%100}%`, background:colors[i%colors.length],
+                  width:sz, height:sz,
+                  animationDuration:`${2.2+(i%7)*0.4}s`, animationDelay:`${(i*0.15)%2}s`,
+                  borderRadius: i%3===0 ? '50%':'2px',
+                }}/>;
+              })}
+              <div style={{
+                position:'relative', background:'rgba(255,255,255,0.12)',
+                border:'1.5px solid rgba(255,255,255,0.35)', borderRadius:'24px',
+                boxShadow:'0 8px 60px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.25)',
+                padding:'48px 56px', textAlign:'center', maxWidth:'400px', width:'90vw',
+                animation:'cmx-pop 0.5s cubic-bezier(.34,1.56,.64,1) forwards', color:'#fff',
+              }}>
+                <div style={{fontSize:'64px',lineHeight:1,marginBottom:'16px',filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.4))'}}>
+                  {opponentLeftInfo ? '👋' : gameResult.winner ? '🏆' : '🤝'}
+                </div>
+                <h2 style={{
+                  fontSize:'1.75rem', fontWeight:800, letterSpacing:'-0.02em', marginBottom:'8px',
+                  background: opponentLeftInfo
+                    ? 'linear-gradient(120deg,#e0f2fe,#7dd3fc,#38bdf8,#e0f2fe)'
+                    : gameResult.winner
+                    ? 'linear-gradient(120deg,#fde68a,#f59e0b,#fbbf24,#fde68a)'
+                    : 'linear-gradient(120deg,#d1fae5,#6ee7b7,#34d399,#d1fae5)',
+                  backgroundSize:'200% auto',
+                  WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+                  animation:'cmx-shimmer 2.5s linear infinite',
+                }}>
+                  {opponentLeftInfo
+                    ? 'Opponent Left'
+                    : gameResult.status === 'checkmate' ? `${gameResult.winner} Wins!`
+                    : gameResult.status === 'stalemate' ? 'Draw!'
+                    : gameResult.status === 'timeout' ? `${gameResult.winner} Wins on Time!`
+                    : gameResult.status === 'resigned' ? `${gameResult.winner} Wins!`
+                    : gameResult.winner ? `${gameResult.winner} Wins!` : 'Draw!'}
+                </h2>
+                <p style={{fontSize:'1rem',color:'rgba(255,255,255,0.78)',marginBottom:'28px',fontWeight:500}}>
+                  {opponentLeftInfo
+                    ? `${opponentLeftInfo.leaverName} has left the game`
+                    : gameResult.status === 'checkmate' ? 'by Checkmate'
+                    : gameResult.status === 'stalemate' ? 'Stalemate'
+                    : gameResult.status === 'timeout' ? 'Time ran out'
+                    : gameResult.reason || 'Opponent resigned'}
+                </p>
+                <button onClick={leaveGame} style={{
+                  padding:'12px 36px', borderRadius:'12px',
+                  border:'1.5px solid rgba(255,255,255,0.4)',
+                  background:'rgba(255,255,255,0.18)', color:'#fff',
+                  fontWeight:700, fontSize:'1rem', cursor:'pointer',
+                  letterSpacing:'0.03em', transition:'background 0.2s,transform 0.15s',
+                  backdropFilter:'blur(4px)',
+                }}
+                  onMouseOver={e=>{e.currentTarget.style.background='rgba(255,255,255,0.3)';e.currentTarget.style.transform='scale(1.04)';}}
+                  onMouseOut={e=>{e.currentTarget.style.background='rgba(255,255,255,0.18)';e.currentTarget.style.transform='scale(1)';}}
+                >
+                  Back to Lobby
+                </button>
+              </div>
             </div>
           )}
 
@@ -371,7 +457,7 @@ const Game = () => {
 
               <ThemeSelector
                 currentTheme={theme}
-                onThemeChange={setTheme}
+                onThemeChange={handleThemeChange}
               />
             </div>
           </div>
