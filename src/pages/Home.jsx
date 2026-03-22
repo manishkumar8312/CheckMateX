@@ -79,6 +79,10 @@ const Home = () => {
                   <span className="text-green-500 mr-2">✓</span>
                   Check and checkmate detection
                 </li>
+                <li className="flex items-center text-blue-600 font-bold">
+                  <span className="text-blue-500 mr-2">★</span>
+                  NEW: Play with AI (Stockfish)
+                </li>
               </ul>
             </div>
           </div>

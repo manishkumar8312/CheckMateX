@@ -50,7 +50,14 @@ const Game = () => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.emit('joinGame', { roomId });
+    socket.emit('joinGame', { roomId }, (response) => {
+      if (response && !response.success) {
+        console.error('Failed to join game:', response.message);
+        setGameState('error');
+        alert(response.message || 'Game not found. Please create a new room.');
+        navigate('/');
+      }
+    });
 
     socket.on('gameState', (state) => {
       setGameState(state.isInCheck ? 'check' : state.status);

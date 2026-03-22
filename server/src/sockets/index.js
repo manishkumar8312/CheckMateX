@@ -1,9 +1,12 @@
 import { registerRoomSocket } from './room.socket.js';
 import { registerGameSocket } from './game.socket.js';
 import { registerTimerSocket } from './timer.socket.js';
+import { aiLog } from '../utils/logger.js';
 
 export const registerSockets = (io) => {
+  aiLog('Socket server initialized and registerSockets called');
   io.on('connection', (socket) => {
+    aiLog('New socket connection', { socketId: socket.id });
     console.log('New socket connection:', socket.id);
     console.log('Socket data:', socket.data);
     

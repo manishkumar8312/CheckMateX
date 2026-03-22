@@ -1,6 +1,6 @@
 import { makeMove, resignGame, getGameState } from '../controllers/gameController.js';
-import { timerService } from '../services/index.js';
-import { chessService } from '../services/index.js';
+import { roomService, timerService, chessAiService, chessService } from '../services/index.js';
+import { aiLog } from '../utils/logger.js';
 
 export const registerGameSocket = (io, socket) => {
   socket.on('joinGame', ({ roomId }, callback) => {
@@ -38,14 +38,14 @@ export const registerGameSocket = (io, socket) => {
   });
 
   socket.on('makeMove', (payload, callback) => {
-    console.log('makeMove received:', payload);
+    aiLog('makeMove received:', payload);
     try {
       const result = makeMove(payload);
-      console.log('makeMove successful:', result);
+      aiLog('makeMove successful:', result);
 
       // Evaluate game state after the move
       const gameState = chessService.evaluateGameState(result.room.chessFen, result.room.currentPlayer);
-      console.log('Game state after move:', gameState);
+      aiLog('Game state after move:', gameState);
 
       const GAME_OVER_STATUSES = ['checkmate', 'stalemate', 'draw'];
       const isGameOver = GAME_OVER_STATUSES.includes(gameState.status);
@@ -81,11 +81,98 @@ export const registerGameSocket = (io, socket) => {
       }
 
       callback?.({ success: true, ...result });
+
+      // Trigger AI move if next player is AI
+      const room = roomService.getRoom(payload.roomId);
+      aiLog('Trigger check for AI move', { roomId: payload.roomId, isAiOpponent: room?.isAiOpponent, status: room?.status, currentPlayer: room?.currentPlayer });
+      if (room && room.isAiOpponent && room.status === 'playing') {
+        const nextPlayerObj = room.players.find(p => p.color === room.currentPlayer);
+        aiLog('Next player object', nextPlayerObj);
+        if (nextPlayerObj && nextPlayerObj.isAi) {
+          handleAiMove(io, payload.roomId);
+        }
+      }
     } catch (error) {
-      console.log('makeMove error:', error.message);
+      aiLog('makeMove error:', error.message);
       callback?.({ success: false, message: error.message });
     }
   });
+
+  const handleAiMove = async (io, roomId) => {
+    try {
+      const room = roomService.getRoom(roomId);
+      aiLog('handleAiMove execution started', { roomId, fen: room?.chessFen });
+      if (!room || !room.isAiOpponent) return;
+
+      const aiPlayer = room.players.find(p => p.isAi);
+      if (!aiPlayer) {
+        aiLog('AI player not found in room players', room.players);
+        return;
+      }
+
+      if (room.status !== 'playing') {
+        aiLog('[AI] Room status is not playing:', room.status);
+        return;
+      }
+
+      // Add a small delay for realism
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      aiLog('[AI] Requesting move for FEN:', room.chessFen);
+      const moveResult = await chessAiService.getNextMove(room.chessFen);
+      aiLog('[AI] API Move Result:', moveResult);
+      
+      const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      const from = {
+        row: 8 - parseInt(moveResult.fromSquare[1], 10),
+        col: files.indexOf(moveResult.fromSquare[0])
+      };
+      const to = {
+        row: 8 - parseInt(moveResult.toSquare[1], 10),
+        col: files.indexOf(moveResult.toSquare[0])
+      };
+
+      // Apply move via controller
+      const result = makeMove({
+        roomId,
+        playerId: aiPlayer.id,
+        from,
+        to,
+        promotion: moveResult.promotion || 'q'
+      });
+
+      aiLog('AI move made and recorded', { from, to });
+
+      // Evaluate game state after AI move
+      const gameState = chessService.evaluateGameState(result.room.chessFen, result.room.currentPlayer);
+      
+      // Emit the move to all clients in the room
+      io.to(roomId).emit('moveMade', {
+        room: result.room,
+        move: result.move,
+        gameState
+      });
+      
+      aiLog('AI move emitted to room', roomId);
+
+      // Handle check status
+      if (gameState.status === 'check') {
+        io.to(roomId).emit('checkStatus', {
+          isInCheck: true,
+          currentPlayer: result.room.currentPlayer,
+          reason: gameState.reason
+        });
+      } else {
+        io.to(roomId).emit('checkStatus', {
+          isInCheck: false,
+          currentPlayer: result.room.currentPlayer
+        });
+      }
+    } catch (error) {
+      aiLog('Error in handleAiMove:', error.message);
+      console.error('[AI] Error during AI move:', error);
+    }
+  };
 
   socket.on('resignGame', (payload, callback) => {
     try {

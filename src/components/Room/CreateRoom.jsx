@@ -7,6 +7,7 @@ const CreateRoom = () => {
   const [roomName, setRoomName] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [timeControl, setTimeControl] = useState('10');
+  const [isAiOpponent, setIsAiOpponent] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
   const socket = useSocket();
@@ -24,10 +25,17 @@ const CreateRoom = () => {
     setTimeout(() => {
       try {
         socket.connect?.();
+        console.log('[CreateRoom] Emitting createRoom with:', {
+          roomName,
+          playerName,
+          timeControl: parseInt(timeControl, 10),
+          isAiOpponent
+        });
         socket.emit('createRoom', {
           roomName,
           playerName,
-          timeControl: parseInt(timeControl, 10)
+          timeControl: parseInt(timeControl, 10),
+          isAiOpponent
         }, (response) => {
           if (!response?.success) {
             alert(response?.message || 'Failed to create room. Please try again.');
@@ -36,7 +44,16 @@ const CreateRoom = () => {
           }
 
           const createdRoom = response.room;
-          navigate(`/room/${createdRoom.id}`, {
+          const targetPath = createdRoom.isAiOpponent ? `/game/${createdRoom.id}` : `/room/${createdRoom.id}`;
+          
+          if (createdRoom.isAiOpponent && response.player) {
+            const storagePrefix = `room:${createdRoom.id}`;
+            sessionStorage.setItem(`${storagePrefix}:playerId`, response.player.id);
+            sessionStorage.setItem(`${storagePrefix}:playerName`, response.player.name);
+            sessionStorage.setItem(`${storagePrefix}:role`, 'host');
+          }
+
+          navigate(targetPath, {
             state: {
               roomName: createdRoom.name,
               playerName,
@@ -55,7 +72,10 @@ const CreateRoom = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg relative overflow-hidden">
+      <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 transform rotate-45 translate-x-3 translate-y-2">
+        AI READY
+      </div>
       <h2 className="text-2xl font-bold text-center mb-6">Create Room</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -102,6 +122,19 @@ const CreateRoom = () => {
             <option value="15">15 minutes (Rapid)</option>
             <option value="30">30 minutes (Classical)</option>
           </select>
+        </div>
+
+        <div className="flex items-center space-x-2 py-2">
+          <input
+            type="checkbox"
+            id="ai-toggle"
+            checked={isAiOpponent}
+            onChange={(e) => setIsAiOpponent(e.target.checked)}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="ai-toggle" className="text-sm font-medium text-gray-700">
+            Play with AI (Stockfish)
+          </label>
         </div>
 
         <button

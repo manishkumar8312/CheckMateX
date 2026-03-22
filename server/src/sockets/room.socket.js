@@ -20,6 +20,13 @@ export const registerRoomSocket = (io, socket) => {
         players: room.players,
         isHost: true,
       });
+
+      if (room.isAiOpponent) {
+        // Start the white player's timer when game begins against AI
+        timerService.startTimer(room.id, 'white');
+        io.to(room.id).emit('gameStarted', { room });
+      }
+
       emitRoomState(room.id);
       callback?.({ success: true, room, player: hostPlayer });
     } catch (error) {

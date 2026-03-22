@@ -1,12 +1,14 @@
 import { INITIAL_BOARD } from '../utils/constants.js';
 import { Chess } from 'chess.js';
+import { aiLog } from '../utils/logger.js';
 
 class RoomService {
   constructor() {
     this.rooms = new Map();
   }
 
-  createRoom(roomName, hostPlayer, timeControl = 600) {
+  createRoom(roomName, hostPlayer, timeControl = 600, isAiOpponent = false) {
+    aiLog('createRoom called', { roomName, hostPlayer, timeControl, isAiOpponent });
     const roomId = this.generateRoomId();
 
     const room = {
@@ -16,6 +18,7 @@ class RoomService {
       players: [hostPlayer],
       status: 'waiting',
       timeControl,
+      isAiOpponent,
       board: this.deepCopyBoard(INITIAL_BOARD),
       chessFen: new Chess().fen(),
       currentPlayer: 'white',
@@ -26,6 +29,23 @@ class RoomService {
       lastActivity: new Date()
     };
 
+    if (isAiOpponent) {
+      console.log('[RoomService] Creating AI room. Adding AI player.');
+      // White is always the host in AI games for now, AI is black
+      hostPlayer.color = 'white';
+      const aiPlayer = {
+        id: 'ai-stockfish',
+        name: 'AI (Stockfish)',
+        color: 'black',
+        isAi: true
+      };
+      room.players.push(aiPlayer);
+      room.status = 'playing'; // Automatically start if AI is present
+    } else {
+      console.log('[RoomService] Creating normal room (no AI).');
+    }
+
+    console.log('[RoomService] Room created with players:', room.players.map(p => p.name));
     this.rooms.set(roomId, room);
     return room;
   }

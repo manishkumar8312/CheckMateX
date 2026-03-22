@@ -1,14 +1,16 @@
 import { roomService, timerService, chessService } from '../services/index.js';
 import { generatePlayerId } from '../utils/generatePin.js';
 
-export const createRoom = ({ roomName, playerName, timeControl }) => {
+export const createRoom = (payload) => {
+  const { roomName, playerName, timeControl, isAiOpponent } = payload;
+  console.log('[RoomController] Received createRoom payload:', payload);
   const hostPlayer = {
     id: generatePlayerId(),
     name: playerName,
     color: 'white',
   };
 
-  const room = roomService.createRoom(roomName, hostPlayer, timeControl);
+  const room = roomService.createRoom(roomName, hostPlayer, timeControl, isAiOpponent);
   timerService.createTimer(room.id, timeControl * 60 || 600);
 
   return { room, hostPlayer };
