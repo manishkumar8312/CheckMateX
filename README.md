@@ -1,24 +1,32 @@
 # CheckMateX
 
-A real-time multiplayer chess application built using React, Node.js, and Socket.IO. The platform supports private room creation using a PIN, real-time move synchronization, configurable timers, and multiple board themes.
+A real-time multiplayer chess application built using React, Node.js, and Socket.IO. The platform enables synchronized gameplay through private rooms, configurable timers, and AI-based practice powered by Socketfish.
 
 [![Status](https://img.shields.io/badge/Status-Active-brightgreen)]()
 [![Maintained](https://img.shields.io/badge/Maintained-Yes-success)]()
-[![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=white)]()
-[![Backend](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)]()
-[![Styling](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)]()
+[![Frontend](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react\&logoColor=white)]()
+[![Backend](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js\&logoColor=white)]()
+[![Realtime](https://img.shields.io/badge/Realtime-Socket.IO-black?logo=socket.io)]()
+[![Styling](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?logo=tailwind-css\&logoColor=white)]()
 [![License](https://img.shields.io/badge/License-MIT-success)]()
+
+---
+
+## Overview
+
+CheckMateX is designed to deliver a low-latency, real-time chess experience over the web. It supports both multiplayer gameplay and AI-based practice. The system ensures consistent game state synchronization across all connected clients using WebSocket-based communication.
 
 ---
 
 ## Features
 
 * Real-time multiplayer gameplay using Socket.IO
-* Create and join private rooms via PIN
-* Configurable game timers
+* Private room creation and joining via secure PIN
+* AI-based practice using Socketfish integration
+* Configurable timers for competitive matches
 * Multiple chessboard themes
-* Validated chess moves and game state management
-* Modular and scalable frontend and backend architecture
+* Server-side move validation and game state management
+* Scalable and modular architecture
 
 ---
 
@@ -39,43 +47,81 @@ A real-time multiplayer chess application built using React, Node.js, and Socket
 
 ---
 
-## Project Folder Structure
+## Project Structure
 
 ```
 checkmatex/
 ├── public/
-│   └── vite.svg
+│   └── logo.png
 │
 ├── server/
-│   ├── src/
-│   │   ├── config/
-│   │   │   └── socket.js
-│   │   ├── controllers/
-│   │   │   ├── roomController.js
-│   │   │   └── gameController.js
-│   │   ├── services/
-│   │   │   ├── roomService.js
-│   │   │   ├── timerService.js
-│   │   │   └── chessService.js
-│   │   ├── sockets/
-│   │   │   ├── room.socket.js
-│   │   │   ├── game.socket.js
-│   │   │   └── timer.socket.js
-│   │   ├── utils/
-│   │   │   ├── generatePin.js
-│   │   │   └── validateMove.js
-│   │   ├── app.js
-│   │   └── server.js
+│   ├── config/
+│   │   └── socket.js
+│   │
+│   ├── controllers/
+│   │   ├── gameController.js
+│   │   └── roomController.js
+│   │
+│   ├── services/
+│   │   ├── chessAiService.js
+│   │   ├── chessService.js
+│   │   ├── roomService.js
+│   │   └── timerService.js
+│   │
+│   ├── sockets/
+│   │   ├── game.socket.js
+│   │   ├── room.socket.js
+│   │   ├── timer.socket.js
+│   │   └── index.js
+│   │
+│   ├── utils/
+│   │   ├── constants.js
+│   │   ├── generatePin.js
+│   │   ├── logger.js
+│   │   └── validateMove.js
+│   │
+│   ├── app.js
+│   ├── server.js
+│   ├── index.js
 │   ├── .env
 │   ├── package.json
 │   └── package-lock.json
 │
 ├── src/
 │   ├── components/
+│   │   ├── ChessBoard/
+│   │   │   ├── ChessBoard.jsx
+│   │   │   ├── BoardTheme.css
+│   │   │   └── index.jsx
+│   │   │
+│   │   ├── Controls/
+│   │   │   ├── ThemeSelector.jsx
+│   │   │   └── TimeSelector.jsx
+│   │   │
+│   │   ├── Room/
+│   │   ├── Timer/
+│   │   │   └── Timer.jsx
+│   │   │
+│   │   └── UI/
+│   │       └── LoadingOverlay.jsx
+│   │
 │   ├── pages/
+│   │   ├── Game.jsx
+│   │   ├── Home.jsx
+│   │   └── NotFound.jsx
+│   │
 │   ├── socket/
+│   │   └── socket.js
+│   │
 │   ├── store/
+│   │   ├── gameStore.js
+│   │   ├── roomStore.js
+│   │   └── timerStore.js
+│   │
 │   ├── utils/
+│   │   ├── chessConfig.js
+│   │   └── constants.js
+│   │
 │   ├── App.jsx
 │   ├── App.css
 │   ├── index.css
@@ -94,13 +140,25 @@ checkmatex/
 
 ---
 
+## Architecture Overview
+
+The application follows a modular client-server architecture:
+
+* The frontend manages UI rendering, user interactions, and socket communication.
+* The backend is responsible for room management, move validation, timer synchronization, and AI computation.
+* Socket.IO enables bidirectional communication for real-time updates.
+* The system is divided into controllers, services, and socket layers to maintain separation of concerns.
+* AI-based gameplay is handled via `chessAiService.js`, integrating Socketfish for move generation.
+
+---
+
 ## Installation
 
 ### Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/checkmatex.git
-cd realtime-chess-game
+cd checkmatex
 ```
 
 ### Install Dependencies
@@ -135,7 +193,11 @@ npm start
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`.
+Application URL:
+
+```
+http://localhost:5173
+```
 
 ---
 
@@ -153,10 +215,10 @@ CLIENT_URL=http://localhost:5173
 ## Future Enhancements
 
 * Spectator mode
-* AI opponent integration
-* Match history and PGN export
-* User authentication
-* Online matchmaking
+* Match history with PGN export
+* User authentication and player profiles
+* Online matchmaking system
+* Deployment and scalability improvements
 
 ---
 
@@ -164,6 +226,7 @@ CLIENT_URL=http://localhost:5173
 
 Manish Kumar Sah
 B.Tech Computer Science and Engineering
+Lovely Professional University
 
 ---
 
