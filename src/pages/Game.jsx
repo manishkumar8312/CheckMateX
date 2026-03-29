@@ -327,62 +327,62 @@ const Game = () => {
               `}</style>
               {/* Confetti only for non-resignation victories */}
               {gameResult.status !== 'resigned' && Array.from({ length: 30 }).map((_, i) => {
-                const colors = ['#f59e0b','#3b82f6','#10b981','#ef4444','#a855f7','#ec4899','#06b6d4','#f97316'];
+                const colors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#a855f7', '#ec4899', '#06b6d4', '#f97316'];
                 const sz = `${8 + (i % 5) * 3}px`;
                 return <div key={i} className="cmx-confetti" style={{
-                  left:`${(i*3.4)%100}%`, background:colors[i%colors.length],
-                  width:sz, height:sz,
-                  animationDuration:`${2.2+(i%7)*0.4}s`, animationDelay:`${(i*0.15)%2}s`,
-                  borderRadius: i%3===0 ? '50%':'2px',
-                }}/>;
+                  left: `${(i * 3.4) % 100}%`, background: colors[i % colors.length],
+                  width: sz, height: sz,
+                  animationDuration: `${2.2 + (i % 7) * 0.4}s`, animationDelay: `${(i * 0.15) % 2}s`,
+                  borderRadius: i % 3 === 0 ? '50%' : '2px',
+                }} />;
               })}
               <div style={{
-                position:'relative', background:'rgba(255,255,255,0.12)',
-                border:'1.5px solid rgba(255,255,255,0.35)', borderRadius:'24px',
-                boxShadow:'0 8px 60px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.25)',
-                padding:'48px 56px', textAlign:'center', maxWidth:'400px', width:'90vw',
-                animation:'cmx-pop 0.5s cubic-bezier(.34,1.56,.64,1) forwards', color:'#fff',
+                position: 'relative', background: 'rgba(255,255,255,0.12)',
+                border: '1.5px solid rgba(255,255,255,0.35)', borderRadius: '24px',
+                boxShadow: '0 8px 60px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.25)',
+                padding: '48px 56px', textAlign: 'center', maxWidth: '400px', width: '90vw',
+                animation: 'cmx-pop 0.5s cubic-bezier(.34,1.56,.64,1) forwards', color: '#fff',
               }}>
-                <div style={{fontSize:'64px',lineHeight:1,marginBottom:'16px',filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.4))'}}>
+                <div style={{ fontSize: '64px', lineHeight: 1, marginBottom: '16px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>
                   {opponentLeftInfo ? '👋' : gameResult.winner ? '🏆' : '🤝'}
                 </div>
                 <h2 style={{
-                  fontSize:'1.75rem', fontWeight:800, letterSpacing:'-0.02em', marginBottom:'8px',
+                  fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '8px',
                   background: opponentLeftInfo
                     ? 'linear-gradient(120deg,#e0f2fe,#7dd3fc,#38bdf8,#e0f2fe)'
                     : gameResult.winner
-                    ? 'linear-gradient(120deg,#fde68a,#f59e0b,#fbbf24,#fde68a)'
-                    : 'linear-gradient(120deg,#d1fae5,#6ee7b7,#34d399,#d1fae5)',
-                  backgroundSize:'200% auto',
-                  WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
-                  animation:'cmx-shimmer 2.5s linear infinite',
+                      ? 'linear-gradient(120deg,#fde68a,#f59e0b,#fbbf24,#fde68a)'
+                      : 'linear-gradient(120deg,#d1fae5,#6ee7b7,#34d399,#d1fae5)',
+                  backgroundSize: '200% auto',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                  animation: 'cmx-shimmer 2.5s linear infinite',
                 }}>
                   {opponentLeftInfo
                     ? 'Opponent Left'
                     : gameResult.status === 'checkmate' ? `${gameResult.winner} Wins!`
-                    : gameResult.status === 'stalemate' ? 'Draw!'
-                    : gameResult.status === 'timeout' ? `${gameResult.winner} Wins on Time!`
-                    : gameResult.status === 'resigned' ? `${gameResult.winner} Wins!`
-                    : gameResult.winner ? `${gameResult.winner} Wins!` : 'Draw!'}
+                      : gameResult.status === 'stalemate' ? 'Draw!'
+                        : gameResult.status === 'timeout' ? `${gameResult.winner} Wins on Time!`
+                          : gameResult.status === 'resigned' ? `${gameResult.winner} Wins!`
+                            : gameResult.winner ? `${gameResult.winner} Wins!` : 'Draw!'}
                 </h2>
-                <p style={{fontSize:'1rem',color:'rgba(255,255,255,0.78)',marginBottom:'28px',fontWeight:500}}>
+                <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.78)', marginBottom: '28px', fontWeight: 500 }}>
                   {opponentLeftInfo
                     ? `${opponentLeftInfo.leaverName} has left the game`
                     : gameResult.status === 'checkmate' ? 'by Checkmate'
-                    : gameResult.status === 'stalemate' ? 'Stalemate'
-                    : gameResult.status === 'timeout' ? 'Time ran out'
-                    : gameResult.reason || 'Opponent resigned'}
+                      : gameResult.status === 'stalemate' ? 'Stalemate'
+                        : gameResult.status === 'timeout' ? 'Time ran out'
+                          : gameResult.reason || 'Opponent resigned'}
                 </p>
                 <button onClick={leaveGame} style={{
-                  padding:'12px 36px', borderRadius:'12px',
-                  border:'1.5px solid rgba(255,255,255,0.4)',
-                  background:'rgba(255,255,255,0.18)', color:'#fff',
-                  fontWeight:700, fontSize:'1rem', cursor:'pointer',
-                  letterSpacing:'0.03em', transition:'background 0.2s,transform 0.15s',
-                  backdropFilter:'blur(4px)',
+                  padding: '12px 36px', borderRadius: '12px',
+                  border: '1.5px solid rgba(255,255,255,0.4)',
+                  background: 'rgba(255,255,255,0.18)', color: '#fff',
+                  fontWeight: 700, fontSize: '1rem', cursor: 'pointer',
+                  letterSpacing: '0.03em', transition: 'background 0.2s,transform 0.15s',
+                  backdropFilter: 'blur(4px)',
                 }}
-                  onMouseOver={e=>{e.currentTarget.style.background='rgba(255,255,255,0.3)';e.currentTarget.style.transform='scale(1.04)';}}
-                  onMouseOut={e=>{e.currentTarget.style.background='rgba(255,255,255,0.18)';e.currentTarget.style.transform='scale(1)';}}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.3)'; e.currentTarget.style.transform = 'scale(1.04)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; e.currentTarget.style.transform = 'scale(1)'; }}
                 >
                   Back to Lobby
                 </button>

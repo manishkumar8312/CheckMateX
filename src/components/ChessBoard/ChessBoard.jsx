@@ -62,31 +62,31 @@ const ChessBoard = ({ orientation = 'white', theme = localStorage.getItem('chess
 
   return (
     <div className={`inline-block border-4 border-gray-800 rounded-lg shadow-2xl ${theme}-theme board-container`}>
-        {rowIndices.map((rowIndex) => (
-          <div key={rowIndex} className="flex">
-            {colIndices.map((colIndex) => {
-              const piece = board[rowIndex][colIndex];
-              return (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  className={`w-16 h-16 flex items-center justify-center text-5xl cursor-pointer transition-all duration-200 hover:brightness-110
+      {rowIndices.map((rowIndex) => (
+        <div key={rowIndex} className="flex">
+          {colIndices.map((colIndex) => {
+            const piece = board[rowIndex][colIndex];
+            return (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                className={`w-16 h-16 flex items-center justify-center text-5xl cursor-pointer transition-all duration-200 hover:brightness-110
                     ${getSquareColor(rowIndex, colIndex)}
                     ${isSelected(rowIndex, colIndex) ? 'ring-4 ring-yellow-400 ring-inset' : ''}
                   `}
-                  onClick={() => handleSquareClick(rowIndex, colIndex)}
-                >
-                  {piece && (
-                    <span className={`select-none ${piece === piece.toUpperCase() ? 'text-white drop-shadow-lg' : 'text-black drop-shadow-lg'}`}>
-                      {piece}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    );
+                onClick={() => handleSquareClick(rowIndex, colIndex)}
+              >
+                {piece && (
+                  <span className={`select-none ${piece === piece.toUpperCase() ? 'text-white drop-shadow-lg' : 'text-black drop-shadow-lg'}`}>
+                    {piece}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 };
 
 export default ChessBoard;
